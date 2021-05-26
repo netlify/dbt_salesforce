@@ -1,16 +1,18 @@
+{{ config(alias='int_salesforce_opportunity_aggregation_by_owner') }}
+
 with salesforce_opportunity_enhanced as (
-    
+
     select *
     from {{ ref('salesforce__opportunity_enhanced') }}
-  
+
 ), salesforce_user as (
 
     select *
     from {{ var('user') }}
-  
+
 ), booking_by_owner as (
 
-  select 
+  select
     opportunity_manager_id as b_manager_id,
     opportunity_owner_id as b_owner_id,
     round(sum(closed_amount_this_month)) as bookings_amount_closed_this_month,
@@ -28,7 +30,7 @@ with salesforce_opportunity_enhanced as (
 
 ), lost_by_owner as (
 
-  select 
+  select
     opportunity_manager_id as l_manager_id,
     opportunity_owner_id as l_owner_id,
     round(sum(closed_amount_this_month)) as lost_amount_this_month,
@@ -43,7 +45,7 @@ with salesforce_opportunity_enhanced as (
 
 ), pipeline_by_owner as (
 
-  select 
+  select
     opportunity_manager_id as p_manager_id,
     opportunity_owner_id as p_owner_id,
     round(sum(created_amount_this_month)) as pipeline_created_amount_this_month,
@@ -63,7 +65,7 @@ with salesforce_opportunity_enhanced as (
   group by 1, 2
 )
 
-select 
+select
   salesforce_user.user_id as owner_id,
   coalesce(p_manager_id, b_manager_id, l_manager_id) as manager_id,
   booking_by_owner.*,

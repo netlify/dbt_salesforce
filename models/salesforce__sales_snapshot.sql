@@ -1,11 +1,13 @@
+{{ config(alias='mart_salesforce_sales_snapshot') }}
+
 with salesforce_opportunity_enhanced as (
-    
+
     select *
     from {{ ref('salesforce__opportunity_enhanced') }}
 
 ), pipeline as (
 
-  select 
+  select
 
     round(sum(created_amount_this_month)) as pipeline_created_amount_this_month,
     round(sum(created_amount_this_quarter)) as pipeline_created_amount_this_quarter,
@@ -19,13 +21,13 @@ with salesforce_opportunity_enhanced as (
     round(avg(amount)) as avg_pipeline_opp_amount,
     max(amount) as largest_deal_in_pipeline,
     avg(days_since_created) as avg_days_open
-  
+
   from salesforce_opportunity_enhanced
   where status = 'Pipeline'
 
 ), bookings as (
 
-  select 
+  select
     round(sum(closed_amount_this_month)) as bookings_amount_closed_this_month,
     round(sum(closed_amount_this_quarter)) as bookings_amount_closed_this_quarter,
     count(*) as total_number_bookings,
@@ -40,7 +42,7 @@ with salesforce_opportunity_enhanced as (
 
 ), lost as (
 
-  select 
+  select
     round(sum(closed_amount_this_month)) as lost_amount_this_month,
     round(sum(closed_amount_this_quarter)) as lost_amount_this_quarter,
     count(*) as total_number_lost,
@@ -52,29 +54,29 @@ with salesforce_opportunity_enhanced as (
 
 )
 
-select 
+select
   bookings.*,
   pipeline.*,
   lost.*,
   case when (bookings.bookings_amount_closed_this_month + lost.lost_amount_this_month) = 0 then null
-  else 
+  else
     round(
-      (bookings.bookings_amount_closed_this_month / 
+      (bookings.bookings_amount_closed_this_month /
         (bookings.bookings_amount_closed_this_month + lost.lost_amount_this_month)
-      ) * 100, 2 ) 
+      ) * 100, 2 )
   end as win_percent_this_month,
   case when (bookings.bookings_amount_closed_this_quarter + lost.lost_amount_this_quarter) = 0 then null
   else
     round(
-      (bookings.bookings_amount_closed_this_quarter / 
+      (bookings.bookings_amount_closed_this_quarter /
         (bookings.bookings_amount_closed_this_quarter + lost.lost_amount_this_quarter)
-      ) * 100, 2 ) 
+      ) * 100, 2 )
   end as win_percent_this_quarter,
-  case when (bookings.total_bookings_amount + lost.total_lost_amount) = 0 then null 
+  case when (bookings.total_bookings_amount + lost.total_lost_amount) = 0 then null
   else
     round(
-      (bookings.total_bookings_amount / 
+      (bookings.total_bookings_amount /
         (bookings.total_bookings_amount + lost.total_lost_amount)
-      ) * 100, 2) 
+      ) * 100, 2)
   end as total_win_percent
 from bookings, pipeline, lost

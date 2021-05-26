@@ -1,5 +1,7 @@
+{{ config(alias='mart_salesforce_opporunity_enhanced') }}
+
 with opportunity as (
-    
+
     select *
     from {{ var('opportunity') }}
 
@@ -7,15 +9,15 @@ with opportunity as (
 
     select *
     from {{ var('user') }}
-  
+
 ), account as (
 
     select *
     from {{ var('account') }}
-  
+
 ), add_fields as (
 
-    select 
+    select
       opportunity.*,
       account.account_number,
       account.account_source,
@@ -45,7 +47,7 @@ with opportunity as (
       case when is_closed_this_quarter then amount else 0 end as closed_amount_this_quarter,
       case when is_closed_this_month then 1 else 0 end as closed_count_this_month,
       case when is_closed_this_quarter then 1 else 0 end as closed_count_this_quarter
-    
+
     --The below script allows for pass through columns.
 
       {% if var('opportunity_enhanced_pass_through_columns') %}
@@ -55,11 +57,11 @@ with opportunity as (
       {% endif %}
 
     from opportunity
-    left join account 
+    left join account
       on opportunity.account_id = account.account_id
-    left join salesforce_user as opportunity_owner 
+    left join salesforce_user as opportunity_owner
       on opportunity.owner_id = opportunity_owner.user_id
-    left join salesforce_user as opportunity_manager 
+    left join salesforce_user as opportunity_manager
       on opportunity_owner.manager_id = opportunity_manager.user_id
 )
 
