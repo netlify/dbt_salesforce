@@ -1,22 +1,24 @@
+{{ config(alias='mart_salesforce_manager_performance') }}
+
 with opportunity_aggregation_by_owner as (
-    
+
     select *
     from {{ ref('salesforce__opportunity_aggregation_by_owner') }}
-  
+
 ), salesforce_user as (
 
     select *
     from {{ var('user') }}
-  
+
 ), user_role as (
 
     select *
     from {{ var('user_role') }}
-  
+
 )
 
-select 
-  coalesce(manager.user_id, 'No Manager Assigned') as manager_id,  
+select
+  coalesce(manager.user_id, 'No Manager Assigned') as manager_id,
   coalesce(manager.user_name, 'No Manager Assigned') as manager_name,
   manager.city as manager_city,
   manager.state as manager_state,
@@ -45,21 +47,21 @@ select
   coalesce(sum(total_pipeline_amount), 0) as total_pipeline_amount,
   coalesce(sum(total_pipeline_forecast_amount), 0) as total_pipeline_forecast_amount,
   coalesce(max(largest_deal_in_pipeline), 0) as largest_deal_in_pipeline,
-  round(case when sum(bookings_amount_closed_this_month + lost_amount_this_month) > 0 then 
+  round(case when sum(bookings_amount_closed_this_month + lost_amount_this_month) > 0 then
             sum(bookings_amount_closed_this_month) / sum(bookings_amount_closed_this_month + lost_amount_this_month) * 100
             else 0 end, 2) as win_percent_this_month,
   round(case when sum(bookings_amount_closed_this_quarter + lost_amount_this_quarter) > 0 then
             sum(bookings_amount_closed_this_quarter) / sum(bookings_amount_closed_this_quarter + lost_amount_this_quarter) * 100
             else 0 end, 2) as win_percent_this_quarter,
-  round(case when sum(total_bookings_amount + total_lost_amount) > 0 then 
+  round(case when sum(total_bookings_amount + total_lost_amount) > 0 then
             sum(total_bookings_amount) / sum(total_bookings_amount + total_lost_amount) * 100
             else 0 end, 2) as total_win_percent
 
 from opportunity_aggregation_by_owner
 
-left join salesforce_user as manager 
+left join salesforce_user as manager
   on manager.user_id = opportunity_aggregation_by_owner.manager_id
-left join user_role 
+left join user_role
   on user_role.user_role_id = manager.user_role_id
 
 group by 1, 2, 3, 4, 5
